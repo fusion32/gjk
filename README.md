@@ -1,8 +1,11 @@
 # GJK Implementation
 
-## License: `LICENSE.txt` (Public Domain)
+![screenshot](https://raw.githubusercontent.com/fusion32/gjk/master/img/gjk1.png)
 
 ## About
+
+License: `LICENSE.txt` (Public Domain).
+
 This is a simple implementation of the GJK algorithm based mostly on Casey Muratori's video from 2006 (https://www.youtube.com/watch?v=Qupqu1xe7Io).
 
 There are two core functions `gjk_collision_test` and `gjk`. The first is the version from the video which only tests for overlaps. The second is more complete and will return the distance, closest points, and closest features from the polygons. 
