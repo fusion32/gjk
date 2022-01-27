@@ -8,13 +8,13 @@ static
 void gjk_collistion_test_simplex2(Vector3 *points, i32 *num_points, Vector3 *next_dir){
 	// A = points[1]
 	// B = points[0]
-	DEBUG_ASSERT(*num_points == 2);
+	ASSERT(*num_points == 2);
 	Vector3 AO = -points[1];
 	Vector3 AB = points[0] - points[1];
 
 	// NOTE: This assert should be true or we would
 	// have exited the gjk main loop.
-	DEBUG_ASSERT(v3_dot(AB, AO) > 0);
+	ASSERT(v3_dot(AB, AO) > 0);
 
 	// points = [B, A], dir = AB x AO x AB
 	*next_dir = v3_triple_cross(AB, AO, AB);
@@ -25,7 +25,7 @@ void gjk_collistion_test_simplex3(Vector3 *points, i32 *num_points, Vector3 *nex
 	// A = points[2]
 	// B = points[1]
 	// C = points[0]
-	DEBUG_ASSERT(*num_points == 3);
+	ASSERT(*num_points == 3);
 	Vector3 AO = -points[2];
 	Vector3 AB = points[1] - points[2];
 	Vector3 AC = points[0] - points[2];
@@ -34,7 +34,7 @@ void gjk_collistion_test_simplex3(Vector3 *points, i32 *num_points, Vector3 *nex
 
 	aux = v3_cross(ABC, AC);
 	if(v3_dot(aux, AO) > 0){
-		DEBUG_ASSERT(v3_dot(AC, AO) > 0);
+		ASSERT(v3_dot(AC, AO) > 0);
 		// points = [C, A], dir = AC x AO x AC
 		points[1] = points[2];
 		*num_points = 2;
@@ -44,7 +44,7 @@ void gjk_collistion_test_simplex3(Vector3 *points, i32 *num_points, Vector3 *nex
 
 	aux = v3_cross(AB, ABC);
 	if(v3_dot(aux, AO) > 0){
-		DEBUG_ASSERT(v3_dot(AB, AO) > 0);
+		ASSERT(v3_dot(AB, AO) > 0);
 		// points = [B, A], dir = AB x AO x AB
 		points[0] = points[1];
 		points[1] = points[2];
@@ -71,7 +71,7 @@ bool gjk_collistion_test_simplex4(Vector3 *points, i32 *num_points, Vector3 *nex
 	// B = points[2]
 	// C = points[1]
 	// D = points[0]
-	DEBUG_ASSERT(*num_points == 4);
+	ASSERT(*num_points == 4);
 	Vector3 AO = -points[3];
 	Vector3 AB = points[2] - points[3];
 	Vector3 AC = points[1] - points[3];
@@ -81,7 +81,7 @@ bool gjk_collistion_test_simplex4(Vector3 *points, i32 *num_points, Vector3 *nex
 	Vector3 ADC = v3_cross(AC, AD);
 
 	if(v3_dot(ACB, AO) > 0){
-		DEBUG_ASSERT(v3_dot(AB, AO) > 0 || v3_dot(AC, AO) > 0);
+		ASSERT(v3_dot(AB, AO) > 0 || v3_dot(AC, AO) > 0);
 		// points = [C, B, A], dir = ACB
 		points[0] = points[1];
 		points[1] = points[2];
@@ -92,7 +92,7 @@ bool gjk_collistion_test_simplex4(Vector3 *points, i32 *num_points, Vector3 *nex
 	}
 
 	if(v3_dot(ABD, AO) > 0){
-		DEBUG_ASSERT(v3_dot(AB, AO) > 0 || v3_dot(AD, AO) > 0);
+		ASSERT(v3_dot(AB, AO) > 0 || v3_dot(AD, AO) > 0);
 		// points = [B, D, A], dir = ABD
 		Vector3 tmp = points[0];
 		points[0] = points[2];
@@ -104,7 +104,7 @@ bool gjk_collistion_test_simplex4(Vector3 *points, i32 *num_points, Vector3 *nex
 	}
 
 	if(v3_dot(ADC, AO) > 0){
-		DEBUG_ASSERT(v3_dot(AC, AO) > 0 || v3_dot(AD, AO) > 0);
+		ASSERT(v3_dot(AC, AO) > 0 || v3_dot(AD, AO) > 0);
 		// points = [D, C, A]
 		// points[0] = points[0];
 		// points[1] = points[1];
@@ -119,7 +119,7 @@ bool gjk_collistion_test_simplex4(Vector3 *points, i32 *num_points, Vector3 *nex
 
 static
 Vector3 gjk_polygon_support(GJK_Polygon *p1, GJK_Polygon *p2, Vector3 dir){
-	DEBUG_ASSERT(p1->num_points > 0 && p2->num_points > 0);
+	ASSERT(p1->num_points > 0 && p2->num_points > 0);
 
 	i32 index1 = 0;
 	f32 max1 = v3_dot(p1->points[0], dir);
@@ -164,7 +164,7 @@ bool gjk_collision_test(GJK_Polygon *p1, GJK_Polygon *p2){
 		points[num_points] = new_point;
 		num_points += 1;
 
-		DEBUG_ASSERT(num_points >= 2 && num_points <= 4);
+		ASSERT(num_points >= 2 && num_points <= 4);
 		switch(num_points){
 			case 2:
 				gjk_collistion_test_simplex2(points, &num_points, &dir);

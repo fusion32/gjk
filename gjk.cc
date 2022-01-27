@@ -14,14 +14,14 @@ struct GJK_Point{
 };
 
 static bool gjk_check_degenerate_simplex2(GJK_Point *points, i32 num_points){
-	DEBUG_ASSERT(num_points == 2);
+	ASSERT(num_points == 2);
 	Vector3 A = points[1].minkowski;
 	Vector3 B = points[0].minkowski;
 	return v3_cmp_zero(B - A);
 }
 
 static bool gjk_check_degenerate_simplex3(GJK_Point *points, i32 num_points){
-	DEBUG_ASSERT(num_points == 3);
+	ASSERT(num_points == 3);
 	Vector3 A = points[2].minkowski;
 	Vector3 B = points[1].minkowski;
 	Vector3 C = points[0].minkowski;
@@ -30,7 +30,7 @@ static bool gjk_check_degenerate_simplex3(GJK_Point *points, i32 num_points){
 }
 
 static bool gjk_check_degenerate_simplex4(GJK_Point *points, i32 num_points){
-	DEBUG_ASSERT(num_points == 4);
+	ASSERT(num_points == 4);
 	Vector3 A = points[3].minkowski;
 	Vector3 B = points[2].minkowski;
 	Vector3 C = points[1].minkowski;
@@ -41,7 +41,7 @@ static bool gjk_check_degenerate_simplex4(GJK_Point *points, i32 num_points){
 }
 
 static bool gjk_check_degenerate_simplex(GJK_Point *points, i32 num_points){
-	DEBUG_ASSERT(num_points >= 2 && num_points <= 4);
+	ASSERT(num_points >= 2 && num_points <= 4);
 	switch(num_points){
 		case 2: return gjk_check_degenerate_simplex2(points, num_points);
 		case 3: return gjk_check_degenerate_simplex3(points, num_points);
@@ -54,7 +54,7 @@ static
 void gjk_simplex2(GJK_Point *points, i32 *num_points, Vector3 *dir){
 	// A = points[1]
 	// B = points[0]
-	DEBUG_ASSERT(*num_points == 2);
+	ASSERT(*num_points == 2);
 	Vector3 AO = -points[1].minkowski;
 	Vector3 AB = points[0].minkowski - points[1].minkowski;
 
@@ -74,7 +74,7 @@ void gjk_simplex3(GJK_Point *points, i32 *num_points, Vector3 *dir){
 	// A = points[2].minkowski
 	// B = points[1].minkowski
 	// C = points[0].minkowski
-	DEBUG_ASSERT(*num_points == 3);
+	ASSERT(*num_points == 3);
 	Vector3 AO = -points[2].minkowski;
 	Vector3 AB = points[1].minkowski - points[2].minkowski;
 	Vector3 AC = points[0].minkowski - points[2].minkowski;
@@ -133,7 +133,7 @@ bool gjk_simplex4(GJK_Point *points, i32 *num_points, Vector3 *dir){
 	// B = points[2].minkowski
 	// C = points[1].minkowski
 	// D = points[0].minkowski
-	DEBUG_ASSERT(*num_points == 4);
+	ASSERT(*num_points == 4);
 	Vector3 AO = -points[3].minkowski;
 	Vector3 AB = points[2].minkowski - points[3].minkowski;
 	Vector3 AC = points[1].minkowski - points[3].minkowski;
@@ -188,7 +188,7 @@ bool gjk_simplex4(GJK_Point *points, i32 *num_points, Vector3 *dir){
 				*dir = AO;
 			}
 		}else{
-			DEBUG_ASSERT(v3_dot(AB, AO) > 0 || v3_dot(AC, AO) > 0);
+			ASSERT(v3_dot(AB, AO) > 0 || v3_dot(AC, AO) > 0);
 			// points = [C, B, A], dir = ACB
 			points[0] = points[1];
 			points[1] = points[2];
@@ -217,7 +217,7 @@ bool gjk_simplex4(GJK_Point *points, i32 *num_points, Vector3 *dir){
 				*dir = AO;
 			}
 		}else{
-			DEBUG_ASSERT(v3_dot(AB, AO) > 0 || v3_dot(AD, AO) > 0);
+			ASSERT(v3_dot(AB, AO) > 0 || v3_dot(AD, AO) > 0);
 			// points = [B, D, A], dir = ABD
 			GJK_Point tmp = points[0];
 			points[0] = points[2];
@@ -232,7 +232,7 @@ bool gjk_simplex4(GJK_Point *points, i32 *num_points, Vector3 *dir){
 	if(v3_dot(ADC, AO) > 0){
 		// NOTE: The cases (ADC && ACB) and (ADC && ABD) are already
 		// covered in the tests above.
-		DEBUG_ASSERT(v3_dot(AC, AO) > 0 || v3_dot(AD, AO) > 0);
+		ASSERT(v3_dot(AC, AO) > 0 || v3_dot(AD, AO) > 0);
 		// points = [D, C, A], dir = ADC
 		//points[0] = points[0];
 		//points[1] = points[1];
@@ -251,7 +251,7 @@ static INLINE
 f32 gjk_distance1(GJK_Point A,
 		Vector3 *closest1, Vector3 *closest2){
 	f32 distance = v3_norm(A.minkowski);
-	DEBUG_ASSERT(closest1 && closest2);
+	ASSERT(closest1 && closest2);
 	*closest1 = A.polygon1;
 	*closest2 = A.polygon2;
 	return distance;
@@ -263,10 +263,10 @@ f32 gjk_distance2(GJK_Point A, GJK_Point B,
 	Vector3 AO = -A.minkowski;
 	Vector3 AB = B.minkowski - A.minkowski;
 	f32 k = v3_dot(AO, AB) / v3_norm2(AB);
-	DEBUG_ASSERT(k >= 0.0f && k <= 1.0f);
+	ASSERT(k >= 0.0f && k <= 1.0f);
 	Vector3 closest = A.minkowski + k * AB;
 	f32 distance = v3_norm(closest);
-	DEBUG_ASSERT(closest1 && closest2);
+	ASSERT(closest1 && closest2);
 	*closest1 = A.polygon1 + k * (B.polygon1 - A.polygon1);
 	*closest2 = A.polygon2 + k * (B.polygon2 - A.polygon2);
 	return distance;
@@ -289,10 +289,10 @@ f32 gjk_distance3(GJK_Point A, GJK_Point B, GJK_Point C,
 		+ kb * B.minkowski + kc * C.minkowski;
 	f32 distance = v3_norm(closest);
 
-	DEBUG_ASSERT(ka >= 0.0f && ka <= 1.0f
+	ASSERT(ka >= 0.0f && ka <= 1.0f
 			&& kb >= 0.0f && kb <= 1.0f
 			&& kc >= 0.0f && kc <= 1.0f);
-	DEBUG_ASSERT(closest1 && closest2);
+	ASSERT(closest1 && closest2);
 	*closest1 = ka * A.polygon1
 		+ kb * B.polygon1 + kc * C.polygon1;
 	*closest2 = ka * A.polygon2
@@ -316,8 +316,8 @@ f32 gjk_distance3(GJK_Point A, GJK_Point B, GJK_Point C,
 	f32 kac = kcommon * v3_dot(AP, (ab2 * AC - dbc * AB));
 	// TODO: Sometimes this assert triggers with values like -0.01f.
 	// Maybe this is not a big deal but you never know.
-	//DEBUG_ASSERT(kab >= 0.0f && kac >= 0.0f && (kab + kac) <= 1.0f);
-	DEBUG_ASSERT(closest1 && closest2);
+	//ASSERT(kab >= 0.0f && kac >= 0.0f && (kab + kac) <= 1.0f);
+	ASSERT(closest1 && closest2);
 	*closest1 = A.polygon1
 		+ kab * (B.polygon1 - A.polygon1)
 		+ kac * (C.polygon1 - A.polygon1);
@@ -362,7 +362,7 @@ GJK_Result gjk_no_overlap_result(GJK_Point *points, i32 num_points){
 	// best solution would be to let the gjk caller handle this
 	// case separately.
 
-	DEBUG_ASSERT(num_points >= 1 && num_points <= 3);
+	ASSERT(num_points >= 1 && num_points <= 3);
 	GJK_Result result;
 	result.overlap = false;
 	switch(num_points){
@@ -461,7 +461,7 @@ GJK_Result gjk_no_overlap_result(GJK_Point *points, i32 num_points){
 
 static
 GJK_Point gjk_polygon_support(GJK_Polygon *p1, GJK_Polygon *p2, Vector3 dir){
-	DEBUG_ASSERT(p1->num_points > 0 && p2->num_points > 0);
+	ASSERT(p1->num_points > 0 && p2->num_points > 0);
 
 	i32 index1 = 0;
 	f32 max1 = v3_dot(p1->points[0], dir);
@@ -532,7 +532,7 @@ GJK_Result gjk(GJK_Polygon *p1, GJK_Polygon *p2){
 			goto no_overlap_result;
 		}
 
-		DEBUG_ASSERT(num_points >= 2 && num_points <= 4);
+		ASSERT(num_points >= 2 && num_points <= 4);
 		switch(num_points){
 			case 2:
 				gjk_simplex2(points, &num_points, &direction);

@@ -33,7 +33,7 @@ GLuint gl_compile_shader(const char *debug_name,
 	glGetShaderiv(shader, GL_COMPILE_STATUS, &compile_status);
 	if(compile_status == GL_FALSE){
 		char infolog[256];
-		glGetShaderInfoLog(shader, EV_NARRAY(infolog), NULL, infolog);
+		glGetShaderInfoLog(shader, NARRAY(infolog), NULL, infolog);
 		LOG_ERROR("failed to compile shader (%s, type = %d): (%s)\n",
 				debug_name, shader_type, infolog);
 		glDeleteShader(shader);
@@ -46,7 +46,7 @@ static
 GLuint gl_create_program(const char *debug_name, const char *vshader_text, const char *fshader_text){
 	GLuint vshader = gl_compile_shader(debug_name, GL_VERTEX_SHADER, vshader_text);
 	GLuint fshader = gl_compile_shader(debug_name, GL_FRAGMENT_SHADER, fshader_text);
-	DEBUG_ASSERT(vshader != 0 && fshader != 0);
+	ASSERT(vshader != 0 && fshader != 0);
 
 	GLuint program = glCreateProgram();
 	glAttachShader(program, vshader);
@@ -57,7 +57,7 @@ GLuint gl_create_program(const char *debug_name, const char *vshader_text, const
 	glGetProgramiv(program, GL_LINK_STATUS, &link_status);
 	if(link_status == GL_FALSE){
 		char infolog[256];
-		glGetProgramInfoLog(program, EV_NARRAY(infolog), NULL, infolog);
+		glGetProgramInfoLog(program, NARRAY(infolog), NULL, infolog);
 		LOG_ERROR("failed to link program (%s): %s\n", debug_name, infolog);
 		glDeleteProgram(program);
 		glDeleteShader(vshader);
@@ -73,17 +73,25 @@ GLuint gl_create_program(const char *debug_name, const char *vshader_text, const
 
 static
 bool gl_load(void){
-	bool gl_load_ok = true;
+	bool all_loaded = true;
 	#define GL_PROC(_1, name, _2)									\
 		gl##name = (PFN_gl##name)SDL_GL_GetProcAddress("gl"#name);	\
 		if(!gl##name){												\
 			LOG_ERROR("unable to load `%s`\n", "gl"#name);			\
-			gl_load_ok = false;										\
+			all_loaded = false;										\
 		}
 	#include "opengl.inl"
 
-	if(!gl_load_ok){
-		LOG_ERROR("failed to load OpenGL API\n");
+	if(!all_loaded){
+		if(glGetString){
+			LOG_ERROR("OpenGL API partially loaded. Perhaps the"
+				" requested version wasn't available.\n");
+			LOG_ERROR("GL_VENDOR = %s\n", glGetString(GL_VENDOR));
+			LOG_ERROR("GL_RENDERER = %s\n", glGetString(GL_RENDERER));
+			LOG_ERROR("GL_VERSION = %s\n", glGetString(GL_VERSION));
+		}else{
+			LOG_ERROR("failed to load OpenGL API\n");
+		}	
 		return false;
 	}
 	return true;
@@ -101,11 +109,11 @@ void APIENTRY gl_debug_callback(GLenum source, GLenum type, GLuint id,
 static
 void gl_init_state(void){
 #if BUILD_DEBUG
-	DEBUG_LOG("GL_VENDOR = %s\n", glGetString(GL_VENDOR));
-	DEBUG_LOG("GL_RENDERER = %s\n", glGetString(GL_RENDERER));
-	DEBUG_LOG("GL_VERSION = %s\n", glGetString(GL_VERSION));
-	DEBUG_LOG("GL_SHADING_LANGUAGE_VERSION = %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
-	//DEBUG_LOG("GL_EXTENSIONS = %s\n", glGetString(GL_EXTENSIONS));
+	LOG("GL_VENDOR = %s\n", glGetString(GL_VENDOR));
+	LOG("GL_RENDERER = %s\n", glGetString(GL_RENDERER));
+	LOG("GL_VERSION = %s\n", glGetString(GL_VERSION));
+	LOG("GL_SHADING_LANGUAGE_VERSION = %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+	//LOG("GL_EXTENSIONS = %s\n", glGetString(GL_EXTENSIONS));
 	glDebugMessageCallback(gl_debug_callback, NULL);
 	glEnable(GL_DEBUG_OUTPUT);
 #endif
@@ -145,7 +153,7 @@ struct RenderParams{
 };
 
 LineRenderer liner_init(i32 max_lines){
-	DEBUG_ASSERT(max_lines > 0 && max_lines <= 0x00FFFFFF);
+	ASSERT(max_lines > 0 && max_lines <= 0x00FFFFFF);
 	static const char *vshader =
 		"#version 420\n"
 		"layout(location = 0) in vec3 in_position;\n"
@@ -166,7 +174,7 @@ LineRenderer liner_init(i32 max_lines){
 
 	// create shader program
 	GLuint program = gl_create_program("line_renderer", vshader, fshader);
-	DEBUG_ASSERT(program != 0);
+	ASSERT(program != 0);
 
 	// create vertex buffer
 	GLuint vbuffer;
@@ -204,7 +212,7 @@ void liner_draw(LineRenderer *L, RenderParams *render_params){
 	//glBufferData(GL_UNIFORM_BUFFER, L->ubuffer_size, NULL, GL_STATIC_DRAW);
 	//glBufferData(GL_UNIFORM_BUFFER, L->ubuffer_size, render_params, GL_STATIC_DRAW);
 
-	DEBUG_ASSERT(L->ubuffer_size == sizeof(RenderParams));
+	ASSERT(L->ubuffer_size == sizeof(RenderParams));
 
 	glUseProgram(L->program);
 
@@ -227,7 +235,7 @@ void liner_draw(LineRenderer *L, RenderParams *render_params){
 }
 
 void liner_push_line(LineRenderer *L, Vector3 p1, Vector3 p2, Vector3 color){
-	DEBUG_ASSERT((L->num_vertices + 2) <= L->max_vertices);
+	ASSERT((L->num_vertices + 2) <= L->max_vertices);
 	LineVertex *v = &L->vertices[L->num_vertices];
 	L->num_vertices += 2;
 	v[0].position = p1;
@@ -236,17 +244,21 @@ void liner_push_line(LineRenderer *L, Vector3 p1, Vector3 p2, Vector3 color){
 	v[1].color = color;
 }
 
-void liner_push_aabb(LineRenderer *L, Rect3 aabb, Vector3 color){
+void liner_push_point(LineRenderer *L, Vector3 point, Vector3 color){
+	// point rect
+	Vector3 min = make_v3(-0.02f, -0.02f, -0.02f) + point;
+	Vector3 max = make_v3(+0.02f, +0.02f, +0.02f) + point;
+
 	// bottom vertices
-	Vector3 b1 = make_v3(aabb.min.x, aabb.min.y, aabb.min.z);
-	Vector3 b2 = make_v3(aabb.max.x, aabb.min.y, aabb.min.z);
-	Vector3 b3 = make_v3(aabb.max.x, aabb.max.y, aabb.min.z);
-	Vector3 b4 = make_v3(aabb.min.x, aabb.max.y, aabb.min.z);
+	Vector3 b1 = make_v3(min.x, min.y, min.z);
+	Vector3 b2 = make_v3(max.x, min.y, min.z);
+	Vector3 b3 = make_v3(max.x, max.y, min.z);
+	Vector3 b4 = make_v3(min.x, max.y, min.z);
 	// top vertices
-	Vector3 t1 = make_v3(aabb.min.x, aabb.min.y, aabb.max.z);
-	Vector3 t2 = make_v3(aabb.max.x, aabb.min.y, aabb.max.z);
-	Vector3 t3 = make_v3(aabb.max.x, aabb.max.y, aabb.max.z);
-	Vector3 t4 = make_v3(aabb.min.x, aabb.max.y, aabb.max.z);
+	Vector3 t1 = make_v3(min.x, min.y, max.z);
+	Vector3 t2 = make_v3(max.x, min.y, max.z);
+	Vector3 t3 = make_v3(max.x, max.y, max.z);
+	Vector3 t4 = make_v3(min.x, max.y, max.z);
 
 	// bottom edges
 	liner_push_line(L, b1, b2, color);
@@ -265,13 +277,6 @@ void liner_push_aabb(LineRenderer *L, Rect3 aabb, Vector3 color){
 	liner_push_line(L, t4, t1, color);
 }
 
-void liner_push_point(LineRenderer *L, Vector3 point, Vector3 color){
-	Rect3 point_rect = make_rect3(
-		make_v3(-0.02f, -0.02f, -0.02f),
-		make_v3(+0.02f, +0.02f, +0.02f));
-	liner_push_aabb(L, point_rect + point, color);
-}
-
 // ----------------------------------------------------------------
 // Camera
 // ----------------------------------------------------------------
@@ -283,7 +288,7 @@ struct Camera{
 
 static
 Camera cam_init(Vector3 pos, Vector3 dir, Vector3 up){
-	DEBUG_ASSERT(f32_cmp_zero(v3_dot(dir, up)));
+	ASSERT(f32_cmp_zero(v3_dot(dir, up)));
 	Camera result;
 	result.position = pos;
 	result.direction = dir;
@@ -374,7 +379,7 @@ void gjk_draw_minkowski_points(LineRenderer *L,
 static
 void gjk_draw_closest_feature(LineRenderer *L,
 		Vector3 *points, i32 num_points, Vector3 color){
-	DEBUG_ASSERT(num_points >= 1 && num_points <= 3);
+	ASSERT(num_points >= 1 && num_points <= 3);
 	switch(num_points){
 		case 1:
 			liner_push_point(L, points[0], color);
@@ -423,13 +428,13 @@ void gjk_test1(LineRenderer *L,
 #endif
 
 	// rotate points2
-	DEBUG_ASSERT(angle2 >= 0.0f && angle2 <= EV_2PI);
+	ASSERT(angle2 >= 0.0f && angle2 <= CONST_2PI);
 	Quaternion rotation = quat_angle_axis(angle2, make_v3(0.0f, 0.0f, 1.0f));
-	for(i32 i = 0; i < EV_NARRAY(points2); i += 1)
+	for(i32 i = 0; i < NARRAY(points2); i += 1)
 		points2[i] = v3_rotate(points2[i], rotation);
 
-	GJK_Polygon p1 = make_gjk_polygon(points1, EV_NARRAY(points1));
-	GJK_Polygon p2 = make_gjk_polygon(points2, EV_NARRAY(points2));
+	GJK_Polygon p1 = make_gjk_polygon(points1, NARRAY(points1));
+	GJK_Polygon p2 = make_gjk_polygon(points2, NARRAY(points2));
 
 	if(swap_polygon_order){
 		GJK_Polygon tmp = p1;
@@ -488,11 +493,11 @@ void gjk_test2(LineRenderer *L,
 
 	// rotate points2
 	Quaternion rotation = quat_angle_axis(angle2, make_v3(0.0f, 0.0f, 1.0f));
-	for(i32 i = 0; i < EV_NARRAY(points2); i += 1)
+	for(i32 i = 0; i < NARRAY(points2); i += 1)
 		points2[i] = v3_rotate(points2[i], rotation);
 
-	GJK_Polygon p1 = make_gjk_polygon(points1, EV_NARRAY(points1));
-	GJK_Polygon p2 = make_gjk_polygon(points2, EV_NARRAY(points2));
+	GJK_Polygon p1 = make_gjk_polygon(points1, NARRAY(points1));
+	GJK_Polygon p2 = make_gjk_polygon(points2, NARRAY(points2));
 
 	if(swap_polygon_order){
 		GJK_Polygon tmp = p1;
@@ -537,7 +542,7 @@ int SDL_main(int argc, char **argv){
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
 	// create SDL window
-	window = SDL_CreateWindow("Everlot", SDL_WINDOWPOS_UNDEFINED,
+	window = SDL_CreateWindow("GJK", SDL_WINDOWPOS_UNDEFINED,
 			SDL_WINDOWPOS_UNDEFINED, WINDOW_W, WINDOW_H,
 			SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
 	if(!window){
@@ -569,7 +574,7 @@ int SDL_main(int argc, char **argv){
 		make_v3(0.0f, 0.0f, 16.0f),
 		make_v3(0.0f, 0.0f, -1.0f),
 		make_v3(0.0f, 1.0f, 0.0f));
-	Matrix4 projection = mat4_perspective(16.0f / 9.0f, (f32)(EV_PI / 4), 0.01f, 100.0f);
+	Matrix4 projection = mat4_perspective(16.0f / 9.0f, (f32)(CONST_PI / 4), 0.01f, 100.0f);
 
 	// input state
 	// ----------------------------------------------------------------
@@ -594,10 +599,10 @@ int SDL_main(int argc, char **argv){
 	bool polygon1_move_up = false;
 	bool polygon1_move_down = false;
 
-	const f32 camera_move_speed = 4.0f;					// m/s
-	const f32 camera_turn_speed = (f32)(EV_PI / 10);	// rad/s
-	const f32 polygon1_move_speed = 1.0f;				// m/s
-	const f32 polygon2_turn_speed = (f32)(EV_PI / 4);	// rad/s
+	const f32 camera_move_speed = 4.0f;						// m/s
+	const f32 camera_turn_speed = (f32)(CONST_PI / 10);		// rad/s
+	const f32 polygon1_move_speed = 1.0f;					// m/s
+	const f32 polygon2_turn_speed = (f32)(CONST_PI / 4);	// rad/s
 
 	Vector3 polygon1_position = {};
 	f32 polygon2_angle = 0.0f;
@@ -807,7 +812,7 @@ int SDL_main(int argc, char **argv){
 		{
 			f32 turn_amount = polygon2_turn_speed * dt;
 			polygon2_angle += turn_amount;
-			if(polygon2_angle > EV_2PI)
+			if(polygon2_angle > CONST_2PI)
 				polygon2_angle = 0.0f;
 		}
 
@@ -823,8 +828,8 @@ int SDL_main(int argc, char **argv){
 				break;
 			case 2:
 				gjk_test2(&L,
-					draw_minkowski_points,
 					swap_polygon_order,
+					draw_minkowski_points,
 					polygon1_position, polygon2_angle);
 				break;
 		}

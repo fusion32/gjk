@@ -1,5 +1,5 @@
-#ifndef GJK_EVERLOT_HH_
-#define GJK_EVERLOT_HH_
+#ifndef GJK_GJK_HH_
+#define GJK_GJK_HH_ 1
 
 #include "common.hh"
 #include "math.hh"
@@ -33,4 +33,4 @@ struct GJK_Result{
 GJK_Result gjk(GJK_Polygon *p1, GJK_Polygon *p2);
 bool gjk_collision_test(GJK_Polygon *p1, GJK_Polygon *p2);
 
-#endif //GJK_EVERLOT_HH_
+#endif //GJK_GJK_HH_

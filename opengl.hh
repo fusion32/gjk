@@ -1,5 +1,5 @@
-#ifndef EVERLOT_OPENGL_HH_
-#define EVERLOT_OPENGL_HH_ 1
+#ifndef GJK_OPENGL_HH_
+#define GJK_OPENGL_HH_ 1
 
 #include <stdint.h>
 
@@ -73,4 +73,4 @@ enum{
 #endif
 #include "opengl.inl"
 
-#endif //EVERLOT_OPENGL_HH_
+#endif //GJK_OPENGL_HH_
